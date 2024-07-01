@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const UserDetails = require('./models/user');
+const AdminDetails = require('./models/admin');
 
 const app = express();
 app.use(express.json());
@@ -26,8 +26,8 @@ app.post('/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
     const hash = await bcrypt.hash(password, 10);
-    const newUser = await UserDetails.create({ email, name, password: hash });
-    res.json(newUser);
+    const newAdmin = await AdminDetails.create({ email, name, password: hash });
+    res.json(newAdmin);
   } catch (err) {
     console.error('Error registering user:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -38,8 +38,8 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await UserDetails.findOne({ email });
-    if (!user) {
+    const admin = await AdminDetails.findOne({ email });
+    if (!admin) {
       return res.status(404).json({ error: 'User not found' });
     }
     const match = await bcrypt.compare(password, user.password);
