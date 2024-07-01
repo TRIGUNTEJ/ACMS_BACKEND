@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const AdminDetails = require('./models/admin');
+const UserDetails = require('./models/users')
 
 const app = express();
 app.use(express.json());
@@ -26,8 +27,8 @@ app.post('/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
     const hash = await bcrypt.hash(password, 10);
-    const newAdmin = await AdminDetails.create({ email, name, password: hash });
-    res.json(newAdmin);
+    const newuser = await UserDetails.create({ email, name, password: hash });
+    res.json(UserDetails);
   } catch (err) {
     console.error('Error registering user:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -38,16 +39,28 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const admin = await AdminDetails.findOne({ email });
-    if (!admin) {
-      return res.status(404).json({ error: 'User not found' });
+
+    // Check if the user is an admin
+    let user = await AdminDetails.findOne({ email });
+    if (user) {
+      const match = await bcrypt.compare(password, user.password);
+      if (match) {
+        return res.json({ message: 'Login successful', role: 'admin' });
+      }
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const match = await bcrypt.compare(password, user.password);
-    if (match) {
-      res.json({ message: 'Login successful' });
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
+
+    // Check if the user is a regular user
+    user = await UserDetails.findOne({ email });
+    if (user) {
+      const match = await bcrypt.compare(password, user.password);
+      if (match) {
+        return res.json({ message: 'Login successful', role: 'user' });
+      }
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    return res.status(404).json({ error: 'User not found' });
   } catch (err) {
     console.error('Error logging in:', err);
     res.status(500).json({ error: 'Internal server error' });
