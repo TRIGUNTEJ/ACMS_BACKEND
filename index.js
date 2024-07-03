@@ -3,18 +3,33 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const AdminDetails = require('./models/admin');
-const UserDetails = require('./models/users')
+const UserDetails = require('./models/users');
 
 const app = express();
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 app.use(cors({
- origin: 'https://trigun-acms.netlify.app',
+  origin: 'https://trigun-acms.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
 
-// Connect to MongoDB
+app.use(session({
+  secret: 'GOJO-143', 
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, 
+    secure: false, 
+    httpOnly: true,
+  }
+}));
+
 mongoose.connect('mongodb+srv://root:trigun020903@cluster0.rq9xqrv.mongodb.net/ACRS?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -22,39 +37,37 @@ mongoose.connect('mongodb+srv://root:trigun020903@cluster0.rq9xqrv.mongodb.net/A
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Register endpoint
 app.post('/register', async (req, res) => {
   try {
     const { email, name, password } = req.body;
     const hash = await bcrypt.hash(password, 10);
-    const newuser = await UserDetails.create({ email, name, password: hash });
-    res.json(UserDetails);
+    const newUser = await UserDetails.create({ email, name, password: hash });
+    res.json(newUser);
   } catch (err) {
     console.error('Error registering user:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Login endpoint
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if the user is an admin
     let user = await AdminDetails.findOne({ email });
     if (user) {
       const match = await bcrypt.compare(password, user.password);
       if (match) {
+        req.session.user = { email: user.email, role: 'admin' };
         return res.json({ message: 'Login successful', role: 'admin' });
       }
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check if the user is a regular user
     user = await UserDetails.findOne({ email });
     if (user) {
       const match = await bcrypt.compare(password, user.password);
       if (match) {
+        req.session.user = { email: user.email, role: 'user' };
         return res.json({ message: 'Login successful', role: 'user' });
       }
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -66,19 +79,34 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-app.get('/admin-dashboard', async (req, res) => {
-  try {
-    const { email } = req.query;
-    const admin = await AdminDetails.findOne({ email });
 
-    if (!admin) {
-      return res.status(404).json({ error: 'Admin not found' });
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Error destroying session:', err);
+      return res.status(500).json({ error: 'Internal server error' });
     }
-    res.json({ name: admin.name, email: admin.email });
-  } catch (err) {
-    console.error('Error fetching admin details:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.clearCookie('session-id'); 
+    res.json({ message: 'Logged out successfully' });
+  });
+});
+
+app.get('/admin-dashboard', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
+  const { email } = req.session.user;
+  AdminDetails.findOne({ email })
+    .then(admin => {
+      if (!admin) {
+        return res.status(404).json({ error: 'Admin not found' });
+      }
+      res.json({ name: admin.name, email: admin.email });
+    })
+    .catch(err => {
+      console.error('Error fetching admin details:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    });
 });
 
 app.listen(3041, () => {
