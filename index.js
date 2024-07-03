@@ -66,6 +66,20 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.get('/admin-dashboard', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const admin = await AdminDetails.findOne({ email });
+
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin not found' });
+    }
+    res.json({ name: admin.name, email: admin.email });
+  } catch (err) {
+    console.error('Error fetching admin details:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.listen(3041, () => {
   console.log('Server is running on port 3041');
