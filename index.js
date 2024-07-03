@@ -9,7 +9,7 @@ const UserDetails = require('./models/users')
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'https://trigun-acms.netlify.app',
+ origin: 'https://trigun-acms.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
