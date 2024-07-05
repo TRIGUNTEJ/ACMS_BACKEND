@@ -7,6 +7,7 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const AdminDetails = require('./models/admin');
 const UserDetails = require('./models/users');
+const CourseDetails = require('./models/course');
 
 const app = express();
 app.use(express.json());
@@ -107,6 +108,28 @@ app.get('/admin-dashboard', (req, res) => {
       console.error('Error fetching admin details:', err);
       res.status(500).json({ error: 'Internal server error' });
     });
+});
+app.post('/add-course', async (req, res) => {
+  try {
+    const { CourseName, CourseCode, Department, Credits, Semester, Sections, Capacity } = req.body;
+    const sectionsArray = Array.isArray(Sections) ? Sections : [Sections];
+
+    const newCourse = await CourseDetails.create({CourseName, CourseCode, Department, Credits, Semester, Sections:sectionsArray, Capacity,});
+
+    res.json(newCourse);
+  } catch (err) {
+    console.error('Error adding course:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+app.get('/courses', async (req, res) => {
+  try {
+    const courses = await CourseDetails.find();
+    res.json(courses);
+  } catch (err) {
+    console.error('Error fetching courses:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.listen(3041, () => {
