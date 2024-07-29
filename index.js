@@ -14,7 +14,6 @@ const nodemailer = require('nodemailer');
 const app = express();
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 app.use(cors({
   origin: 'https://trigun-acms.netlify.app',
@@ -22,6 +21,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(cookieParser());
 app.use(session({
   secret: 'GOJO-143', 
   resave: false,
@@ -150,10 +150,10 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/admin-dashboard', (req, res) => {
+  const { email } = req.session.user;
   if (!req.session.user || req.session.user.role !== 'admin') {
     return res.redirect('/');
   }
-  const { email } = req.session.user;
   AdminDetails.findOne({ email })
     .then(admin => {
       if (!admin) {
