@@ -150,7 +150,7 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/admin-dashboard', (req, res) => {
-  const { email } = req.session.user;
+  const { email } = localStorage.getItem('adminEmail');
   if (!req.session.user || req.session.user.role !== 'admin') {
     return res.redirect('/');
   }
