@@ -21,14 +21,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
-
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: 'GOJO-143', 
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, 
-    secure: true, 
+    secure: isProduction, 
     httpOnly: true,
     sameSite: 'None'
   }
