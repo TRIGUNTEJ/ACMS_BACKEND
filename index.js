@@ -7,7 +7,6 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const nodemailer = require('nodemailer');
 const MongoStore = require('connect-mongo');
-
 const AdminDetails = require('./models/admin');
 const UserDetails = require('./models/users');
 const CourseDetails = require('./models/course');
@@ -20,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(cors({
-  origin: 'https://trigun-acms.netlify.app', // Replace with your frontend domain
+  origin: 'https://trigun-acms.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
@@ -31,8 +30,8 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: 'mongodb+srv://root:trigun020903@cluster0.rq9xqrv.mongodb.net/ACRS?retryWrites=true&w=majority&appName=Cluster0' }),
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
-    secure: isProduction, // Only set to true if in production
+    maxAge: 24 * 60 * 60 * 1000,
+    secure: isProduction, 
     httpOnly: true,
     sameSite: 'None'
   }
